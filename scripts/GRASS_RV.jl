@@ -26,7 +26,6 @@ neid_symmetric_lsf = pyimport("NEID_LSF")
 neid_asymmetric_lsf = pyimport("NeidLsf")
 np = pyimport("numpy")
 
-GRASS.Eclipse.get_kernels()
 
 variable_names = ["lambda_min", "lambda_max", "flux_min", "pixel_mean", "pixels", "neid_wavelength"]
 lp = GRASS.LineProperties(exclude=["CI_5380", "NaI_5896"])
@@ -109,14 +108,14 @@ function neid_all_lines_gpu(time_stamps, granulation_status, LD_type, ext_toggle
                         blueshifts=blueshifts, templates=templates, resolution=resolution) 
 
         if model == "LD" 
-            lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), LD_type, obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i], ext_toggle, spot_toggle)
+            lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), LD_type, obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i], ext_toggle, spot_toggle; seed_rng=true)
             wavs_sim, flux_sim = GRASS.convolve_gauss(lambdas, outspec, new_res=11e4)
             v_grid_cpu, ccf_cpu = GRASS.calc_ccf(wavs_sim, flux_sim, lines, depths, 11e4)
             rv[i], rv_error[i] = GRASS.calc_rvs_from_ccf(v_grid_cpu, ccf_cpu)
         end
         
         if model == "LD_ext" 
-            lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), LD_type, obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i], ext_toggle, spot_toggle)
+            lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), LD_type, obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i], ext_toggle, spot_toggle; seed_rng=true)
             wavs_sim, flux_sim = GRASS.convolve_gauss(lambdas, outspec, new_res=11e4)
             v_grid_cpu, ccf_cpu = GRASS.calc_ccf(wavs_sim, flux_sim, lines, depths, 11e4)
             rv[i], rv_error[i] = GRASS.calc_rvs_from_ccf(v_grid_cpu, ccf_cpu)
@@ -125,7 +124,7 @@ function neid_all_lines_gpu(time_stamps, granulation_status, LD_type, ext_toggle
         if model == "LD_ext_CB" 
             optim_list = df_optim_CBOnly[df_optim_CBOnly.Column1 .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
             lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i],
-                                    parse(Float64, string(optim_list[2])), parse(Float64, string(optim_list[3])), parse(Float64, string(optim_list[4])))
+                                    parse(Float64, string(optim_list[2])), parse(Float64, string(optim_list[3])), parse(Float64, string(optim_list[4])); seed_rng=true)
             Δv_max=75000.0
             wavs_sim, flux_sim = GRASS.convolve_gauss(lambdas, outspec, new_res=11e4)
             v_grid_cpu, ccf_cpu = GRASS.calc_ccf(wavs_sim, flux_sim, lines, depths, 11e4, Δv_max=Δv_max)

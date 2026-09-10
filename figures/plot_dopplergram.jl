@@ -13,11 +13,8 @@ import PyPlot; plt = PyPlot; mpl = plt.matplotlib; plt.ioff()
 using PyCall; animation = pyimport("matplotlib.animation");
 using LaTeXStrings
 
-# get kernels
-GRASS.Eclipse.get_kernels()
-
-# Load sunspots from detection
-sunspot_coords = CSV.read(".../work/sw/GRASS/data/sunspots.csv", DataFrame)
+# sunspot table as loaded by GRASS.Eclipse (lon, lat, diameter_km, diameter_arcsec, contrast)
+sunspot_coords = GRASS.Eclipse.spots_info
 
 const Rsun_km = 695700.0 
 # Convert Carrington lon/lat (deg) -> RA/Dec (deg) as seen from Earth center at ET `et`.
