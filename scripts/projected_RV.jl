@@ -9,7 +9,6 @@ using CUDA
 using NaNMath; nm=NaNMath
 import Base: AbstractFloat as AF
 
-GRASS.Eclipse.get_kernels()
 
 df_optim_CBOnly = CSV.read("../data/optimized_cb.csv", DataFrame; header = false) 
 df_optim_CB_MF = CSV.read("../data/optimized_cb_mf.csv", DataFrame; header = false) 
@@ -116,7 +115,7 @@ function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
         jldopen("projected_$(LD_type)_gpu.jld2", "a+") do file
             file["RV_list_no_cb"] = deepcopy(RV_list_no_cb_final) 
             file["intensity"] = deepcopy(intensity_list_final) 
-            file["time"] = deepcopy(SPICE.et2utc.(time_stamps, "ISOC", 3))
+            file["time"] = deepcopy(time_stamps)
         end
     end
 
@@ -125,7 +124,7 @@ function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
         jldopen("projected_$(LD_type)_gpu_ext.jld2", "a+") do file
             file["RV_list_no_cb"] = deepcopy(RV_list_no_cb_final) 
             file["intensity"] = deepcopy(intensity_list_final) 
-            file["time"] = deepcopy(SPICE.et2utc.(time_stamps, "ISOC", 3))
+            file["time"] = deepcopy(time_stamps)
         end
     end
 
@@ -134,16 +133,16 @@ function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
         jldopen("projected_$(LD_type)_gpu_ext_CB_optim.jld2", "a+") do file
             file["RV_list_no_cb"] = deepcopy(RV_list_no_cb_final) 
             file["intensity"] = deepcopy(intensity_list_final) 
-            file["time"] = deepcopy(SPICE.et2utc.(time_stamps, "ISOC", 3))
+            file["time"] = deepcopy(time_stamps)
         end
     end
 
     if model == "LD_ext_CB_MF"
-        @save "projected_$(LD_type)_gpu_ext_CD_MF_optim.jld2"
-        jldopen("projected_$(LD_type)_gpu_ext_CD_MF_optim.jld2", "a+") do file
+        @save "projected_$(LD_type)_gpu_ext_CB_MF_optim.jld2"
+        jldopen("projected_$(LD_type)_gpu_ext_CB_MF_optim.jld2", "a+") do file
             file["RV_list_no_cb"] = deepcopy(RV_list_no_cb_final) 
             file["intensity"] = deepcopy(intensity_list_final) 
-            file["time"] = deepcopy(SPICE.et2utc.(time_stamps, "ISOC", 3))
+            file["time"] = deepcopy(time_stamps)
         end
     end
 end
