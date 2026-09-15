@@ -25,10 +25,12 @@ line_names = GRASS.get_name(lp)
 
 # get lines to do 
 lines_to_do = ["FeI_5434"]
+a = 0.7204002071390232
+b = -1.3467411761008297
 
 # marker/colors for directions
 cs = ["k", "tab:blue", "tab:orange", "tab:green", "tab:pink"]
-ms = [".", "^", "v", "<", ">"]
+ms = [".", ".", ".", ".", "."]
 lbls = ["Center", "North", "South", "East", "West"]
 
 # loop over files
@@ -65,20 +67,36 @@ for i in eachindex(files)
 
         if !seen[ax_idx+1]
             label = lbls[ax_idx + 1]
-            ax1.scatter([mu_val], [cbs], color=cs[ax_idx + 1], marker=ms[ax_idx+1], label=label) 
+            ax1.errorbar(
+                                [mu_val], [cbs];
+                                yerr=[5.0],
+                                fmt=ms[ax_idx+1],
+                                color=cs[ax_idx+1],
+                                capsize=3,
+                                label=label
+                            ) 
             seen[ax_idx+1] = true
         else
-            ax1.scatter([mu_val], [cbs], color=cs[ax_idx + 1], marker=ms[ax_idx+1])
+            ax1.errorbar(
+                            [mu_val], [cbs];
+                            yerr=[5.0],
+                            fmt=ms[ax_idx+1],
+                            color=cs[ax_idx+1],
+                            capsize=3
+                        )
         end
     end
 
-    # take the averages
-    avgs ./= cnts
-    ax1.scatter(mus_plot, avgs, c="k", marker="x", s=50, label="μ average")
+    # generate smooth curve
+    xfit = range(0, 1, length=500)
 
-    ax1.set_xlabel("μ", fontsize=14)
-    ax1.set_ylabel("Convective Blueshift (m/s)", fontsize=14)
-    # ax1.set_xlim(reverse(ax1.get_xlim())...)
+    yfit = a .* xfit.^2 .+ b .* xfit
+
+    ax1.plot(xfit, (yfit * 1000) .- mean(yfit * 1000), color = "k", lw=2)
+
+    ax1.set_xlabel("μ", fontsize=12)
+    ax1.set_ylabel("Convective Blueshift (m/s)", fontsize=12)
+    ax1.invert_xaxis()
     ax1.legend(ncols=2, fontsize=12)
 
     # generate title
@@ -89,12 +107,11 @@ for i in eachindex(files)
     else
         line_title = title[1:idx-1] * " " * title[idx:end] * " Å"
     end
-    ax1.set_title(line_title, fontsize=14)
+    ax1.set_title(line_title, fontsize=12)
     
-    plt.xticks(fontsize=14)
-    plt.yticks(fontsize=14)
-    plt.xlim(0,1.02)
-    plt.savefig(line_names[i] * "_cbs.pdf", dpi = 600, bbox_inches="tight")
-    # plt.clf(); plt.close()
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    ax1.set_xlim(1.02, 0)
+    plt.savefig(line_names[i] * "_cbs_new.pdf", dpi = 600, bbox_inches="tight")
 end
 

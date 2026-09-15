@@ -9,9 +9,8 @@ using CUDA
 using NaNMath; nm=NaNMath
 import Base: AbstractFloat as AF
 
-
-df_optim_CBOnly = CSV.read("../data/optimized_cb.csv", DataFrame; header = false) 
-df_optim_CB_MF = CSV.read("../data/optimized_cb_mf.csv", DataFrame; header = false) 
+df_cb = CSV.read("../data/optimized_cb.csv", DataFrame) 
+df_mf = CSV.read("../data/optimized_mf.csv", DataFrame) 
 
 function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
 
@@ -23,7 +22,7 @@ function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
     # set up paramaters for disk
     N = 197
     Nt = length(time_stamps)
-    disk = GRASS.Eclipse.DiskParamsEclipse(N=N, Nt=Nt, Nsubgrid=40)
+    disk = GRASS.Eclipse.DiskParamsEclipse(N=N, Nt=Nt, Nsubgrid=40, A=14.113, B=-1.698, C=-2.346)
 
     # get lines to construct templates
     lp = GRASS.LineProperties()
@@ -49,7 +48,7 @@ function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
     RV_list_no_cb = Vector{Float64}(undef,size(time_stamps)...)
     intensity_list = Vector{Float64}(undef,size(time_stamps)...)
 
-    ext_coeff_array = [0.15452995224327976, 0.15256098077094832, 0.14720055859068512, 0.154895798933504, 0.15181381895180662, 0.15107508233588227, 0.15116772762156633, 0.14882114581650618, 0.14865707189399568, 0.1494903120065096, 0.16011027092744037, 0.15593033972594958, 0.14195968590211427, 0.15401904166429853, 0.1277699772941639, 0.12709315507233226, 0.12820346527304866, 0.11702310600015708, 0.1435320747844216, 0.12380490304619193, 0.12450734135297492, 0.12101777355247835]
+    ext_coeff_array = [0.1438304560465685, 0.14187742832512693, 0.13654937950870977, 0.14419842183655923, 0.14115839420550458, 0.14047784709222405, 0.14049571462886706, 0.13818879691113792, 0.1379956369831025, 0.13882870569602473, 0.149398324507696, 0.14520869968191066, 0.1313769827201566, 0.14333447289898554, 0.11728672038270234, 0.11659734374312607, 0.11770608713085821, 0.10661103669476844, 0.13294933300463282, 0.1133352805918017, 0.1140511945282083, 0.11058541481581312]
     # loop over lines
     for i in eachindex(lp.λrest) 
         println("\t>>> Template: " * string(splitdir(lfile[i])[2]))
@@ -76,15 +75,16 @@ function projected_RV_gpu(time_stamps, LD_type, ext_toggle, model, spot_toggle)
             end
 
             if model == "LD_ext_CB" #LD with ext & sunspots, no MF but with CB optim functions (flux & CB effect)
-                optim_list = df_optim_CBOnly[df_optim_CBOnly.Column1 .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
+                optim_list = df_cb[df_cb.line .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
                 GRASS.Eclipse.calc_eclipse_quantities_gpu!(time_stamps[t], obs_long, obs_lat, alt, lines, ext_coeff_array[i], disk, gpu_allocs,
-                                        parse(Float64, string(optim_list[2])), parse(Float64, string(optim_list[3])), parse(Float64, string(optim_list[4])))
+                                        parse(Float64, string(optim_list[2])), parse(Float64, string(optim_list[3])), 0.0)
             end
 
             if model == "LD_ext_CB_MF" #LD with ext & sunspots, MF & CB optim functions (flux & CB effect)
-                optim_list = df_optim_CB_MF[df_optim_CB_MF.Column1 .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
+                optim_list_CB = df_cb[df_cb.line .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
+                optim_list_MF = df_mf[df_mf.line .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
                 GRASS.Eclipse.calc_eclipse_quantities_gpu!(time_stamps[t], obs_long, obs_lat, alt, lines, ext_coeff_array[i], disk, gpu_allocs,
-                                        parse(Float64, string(optim_list[2])), parse(Float64, string(optim_list[3])), parse(Float64, string(optim_list[4])), parse(Float64, string(optim_list[5])), parse(Float64, string(optim_list[6])))
+                                        parse(Float64, string(optim_list_CB[2])), parse(Float64, string(optim_list_CB[3])), 0.0, parse(Float64, string(optim_list_MF[2])), parse(Float64, string(optim_list_MF[3])))
             end
 
             idx_grid = Array(gpu_allocs.ld[:, :, 1]) .> 0.0
@@ -153,4 +153,4 @@ function neid_october_eclipse_gpu(LD_type, ext_toggle, model, spot_toggle)
     projected_RV_gpu(neid_october[1:130], LD_type, ext_toggle, model, spot_toggle)
 end
 
-neid_october_eclipse_gpu("SSD_4parameter", false, "LD", true)
+neid_october_eclipse_gpu("SSD_4parameter", true, "LD_ext_CB", true)

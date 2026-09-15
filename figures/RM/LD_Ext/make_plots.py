@@ -10,8 +10,6 @@ from barycorrpy import get_BC_vel
 import matplotlib.lines as mlines
 
 #these projected models are for N=197, sub=40x40, with extinction, with sunspots 
-    # with CB optimized polynomial from projected RVs (model 2 has GRASS CB)
-    # (flux & CB effect), no MF
 projected_SSD_4parameter = h5py.File("data/projected_SSD_4parameter_gpu_ext.jld2", "r")
 projected_RV_SSD_4parameter = projected_SSD_4parameter["RV_list_no_cb"][()]
 
@@ -68,20 +66,21 @@ for i in range(0,len(line_list)):
     axs[0].plot(UTC_time, grass_on_SSD_4parameter_array, color = 'r', linestyle = "--", linewidth = 2, label = "Model III: {} m/s".format(rms3))
 
     axs[0].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
-    axs[0].set_xlabel("Time (UTC)", fontsize=15)
-    axs[0].set_ylabel("RV (m/s)", fontsize=15)
-    axs[0].legend(fontsize=11, frameon=False, loc="lower right")
-    axs[0].tick_params(axis='y', labelsize=11)
+    axs[0].set_xlabel("Time (UTC)", fontsize=12)
+    axs[0].set_ylabel("RV (m/s)", fontsize=12)
+    axs[0].legend(fontsize=12, frameon=False, loc="lower right")
+    axs[0].tick_params(axis='y', labelsize=12)
 
     # residuals 
     axs[1].scatter(UTC_time, line_rv_array - projected_RV_SSD_4parameter_array, color = 'b', marker = "x", s = 8) 
     axs[1].scatter(UTC_time, line_rv_array - grass_off_SSD_4parameter_array, color = 'y', marker = "x", s = 8)  
     axs[1].scatter(UTC_time, line_rv_array - grass_on_SSD_4parameter_array, color = 'r', marker = "x", s = 8) 
     axs[1].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
-    axs[1].set_xlabel("Time (UTC)", fontsize=15)
-    axs[1].set_ylabel("Residuals", fontsize=15) 
-    plt.xticks(fontsize=11)
-    plt.yticks(fontsize=11)
+    axs[1].set_xlabel("Time (UTC)", fontsize=12)
+    axs[1].set_ylabel("Residuals", fontsize=12) 
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    # axs[0].set_title("Fe I 5434 Å", fontsize=12)
     plt.tick_params(axis='x', which='both', top=True, labeltop=False)
     plt.savefig("{}.png".format(line_list[i]))
     plt.clf()

@@ -1,4 +1,4 @@
-# Shadowing the Sun: Testing Synthetic Granulation Spectra with NEID Solar Eclipse Observations (Gonzalez et al. 2026)
+# Shadowing the Sun I: Testing Synthetic Granulation Spectra with NEID Solar Eclipse Observations (Gonzalez et al. 2026)
 
 GRASS (GRanulation And Spectrum Simulator) is a Julia package designed to produce time series of stellar spectra with realistic line-shape changes from solar granulation. GRASS v1.0.x is described in detail in [Palumbo et al. (2022)](https://arxiv.org/abs/2110.11839) and GRASS v2.0.x is presented in [Palumbo et al. (2024a)](https://arxiv.org/abs/2405.07945).
 
