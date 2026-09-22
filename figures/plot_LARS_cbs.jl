@@ -25,8 +25,8 @@ line_names = GRASS.get_name(lp)
 
 # get lines to do 
 lines_to_do = ["FeI_5434"]
-a = 0.7204002071390232
-b = -1.3467411761008297
+a = 0.6365333918359459
+b = -1.2214492003638484
 
 # marker/colors for directions
 cs = ["k", "tab:blue", "tab:orange", "tab:green", "tab:pink"]
