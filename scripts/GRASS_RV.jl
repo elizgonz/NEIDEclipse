@@ -26,14 +26,12 @@ neid_symmetric_lsf = pyimport("NEID_LSF")
 neid_asymmetric_lsf = pyimport("NeidLsf")
 np = pyimport("numpy")
 
-
 variable_names = ["lambda_min", "lambda_max", "flux_min", "pixel_mean", "pixels", "neid_wavelength"]
 lp = GRASS.LineProperties(exclude=["CI_5380", "NaI_5896"])
 airwav = lp.λrest
 vacwav = λ_air_to_vac.(airwav)
 
 df_cb = CSV.read("../data/optimized_cb.csv", DataFrame) 
-df_mf = CSV.read("../data/optimized_mf.csv", DataFrame) 
 
 ext_coeff_array = [0.1438304560465685, 0.14187742832512693, 0.13654937950870977, 0.14419842183655923, 0.14115839420550458, 0.14047784709222405, 0.14049571462886706, 0.13818879691113792, 0.1379956369831025, 0.13882870569602473, 0.149398324507696, 0.14520869968191066, 0.1313769827201566, 0.14333447289898554, 0.11728672038270234, 0.11659734374312607, 0.11770608713085821, 0.10661103669476844, 0.13294933300463282, 0.1133352805918017, 0.1140511945282083, 0.11058541481581312]
 function neid_all_lines_gpu(time_stamps, granulation_status, LD_type, ext_toggle, model, spot_toggle)
@@ -60,18 +58,19 @@ function neid_all_lines_gpu(time_stamps, granulation_status, LD_type, ext_toggle
     #NEID symmtetric LSF
     rv_symmetric_lsf = Vector{Vector{Float64}}(undef,size(name)...)
     rv_error_symmetric_lsf = Vector{Vector{Float64}}(undef,size(name)...)
-    rv_symmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
-    rv_error_symmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
     #NEID asymmtetric LSF
     rv_asymmetric_lsf = Vector{Vector{Float64}}(undef,size(name)...)
     rv_error_asymmetric_lsf = Vector{Vector{Float64}}(undef,size(name)...)
-    rv_asymmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
-    rv_error_asymmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
     resolution = 7e5
     # loop over lines
     orders = [57, 57, 60, 60, 60, 60, 61, 61, 61, 61, 61, 61, 64, 64, 74, 74, 75, 75, 75, 75, 77, 77]
     pixels = [3021:3086, 3062:3128, 2227:2287, 2355:2416, 2464:2526, 2564:2626, 2702:2764, 2738:2801, 2881:2944, 3003:3067, 3057:3093, 3070:3134, 2303:2362, 2529:2589, 3563:3622, 3765:3824, 378:425, 414:461, 478:526, 674:722, 734:781, 802:849]
     for i in eachindex(lp.λrest) 
+        rv_symmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
+        rv_error_symmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
+        rv_asymmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
+        rv_error_asymmetric_lsf_inner = Vector{Float64}(undef,size(time_stamps)...)
+
         if i in vcat(10:22)
             Δv_max=6000.0
         elseif i in vcat(3:9)
@@ -126,20 +125,6 @@ function neid_all_lines_gpu(time_stamps, granulation_status, LD_type, ext_toggle
             lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i],
                                     parse(Float64, string(optim_list[2])), parse(Float64, string(optim_list[3])), 0.0; seed_rng=true)
             Δv_max=75000.0
-            wavs_sim, flux_sim = GRASS.convolve_gauss(lambdas, outspec, new_res=11e4)
-            v_grid_cpu, ccf_cpu = GRASS.calc_ccf(wavs_sim, flux_sim, lines, depths, 11e4, Δv_max=Δv_max)
-            rv[i], rv_error[i] = GRASS.calc_rvs_from_ccf(v_grid_cpu, ccf_cpu)
-        end
-
-        if model == "LD_ext_CB_MF" 
-            optim_list_cb = df_cb[df_cb.line .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
-            optim_list_mf = df_mf[df_mf.line .== splitext(string(splitdir(lfile[i])[2]))[1], :][1, :]
-            lambdas, outspec = GRASS.Eclipse.synth_Eclipse_gpu(spec, disk, true, Float64, falses(disk.Nt), obs_long, obs_lat, alt, time_stamps, lines, ext_coeff_array[i],
-                                    parse(Float64, string(optim_list_cb[2])), parse(Float64, string(optim_list_cb[3])), 0.0, parse(Float64, string(optim_list_mf[2])), parse(Float64, string(optim_list_mf[3])))
-            Δv_max=75000.0
-            if i == 11
-                Δv_max=90000.0
-            end
             wavs_sim, flux_sim = GRASS.convolve_gauss(lambdas, outspec, new_res=11e4)
             v_grid_cpu, ccf_cpu = GRASS.calc_ccf(wavs_sim, flux_sim, lines, depths, 11e4, Δv_max=Δv_max)
             rv[i], rv_error[i] = GRASS.calc_rvs_from_ccf(v_grid_cpu, ccf_cpu)
@@ -219,19 +204,6 @@ function neid_october_eclipse_var_off_gpu(LD_type, ext_toggle, model, spot_toggl
             file["rv_error_asymmetric_lsf"] = deepcopy(rv_error_asymmetric_lsf)
         end
     end
-
-    if model == "LD_ext_CB_MF" 
-        @save "neid_all_lines_rv_off_$(LD_type)_gpu_ext_CB_MF_optim.jld2" 
-        jldopen("neid_all_lines_rv_off_$(LD_type)_gpu_ext_CB_MF_optim.jld2", "a+") do file
-            file["name"] = deepcopy(λrest)
-            file["rv"] = deepcopy(rv) 
-            file["rv_error"] = deepcopy(rv_error)
-            file["rv_symmetric_lsf"] = deepcopy(rv_symmetric_lsf) 
-            file["rv_error_symmetric_lsf"] = deepcopy(rv_error_symmetric_lsf)
-            file["rv_asymmetric_lsf"] = deepcopy(rv_asymmetric_lsf) 
-            file["rv_error_asymmetric_lsf"] = deepcopy(rv_error_asymmetric_lsf)
-        end
-    end
 end
 
 function neid_october_eclipse_var_on_gpu(LD_type, ext_toggle, model, spot_toggle)
@@ -267,19 +239,6 @@ function neid_october_eclipse_var_on_gpu(LD_type, ext_toggle, model, spot_toggle
     if model == "LD_ext_CB" 
         @save "neid_all_lines_rv_on_$(LD_type)_gpu_ext_CB_optim.jld2" 
         jldopen("neid_all_lines_rv_on_$(LD_type)_gpu_ext_CB_optim.jld2", "a+") do file
-            file["name"] = deepcopy(λrest)
-            file["rv"] = deepcopy(rv) 
-            file["rv_error"] = deepcopy(rv_error)
-            file["rv_symmetric_lsf"] = deepcopy(rv_symmetric_lsf) 
-            file["rv_error_symmetric_lsf"] = deepcopy(rv_error_symmetric_lsf)
-            file["rv_asymmetric_lsf"] = deepcopy(rv_asymmetric_lsf) 
-            file["rv_error_asymmetric_lsf"] = deepcopy(rv_error_asymmetric_lsf)
-        end
-    end
-
-    if model == "LD_ext_CB_MF" 
-        @save "neid_all_lines_rv_on_$(LD_type)_gpu_ext_CB_MF_optim.jld2" 
-        jldopen("neid_all_lines_rv_on_$(LD_type)_gpu_ext_CB_MF_optim.jld2", "a+") do file
             file["name"] = deepcopy(λrest)
             file["rv"] = deepcopy(rv) 
             file["rv_error"] = deepcopy(rv_error)

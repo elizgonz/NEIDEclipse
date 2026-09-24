@@ -54,6 +54,7 @@ rms1_arr = []
 rms2_arr = []
 rms3_arr = []
 rms1_combined = []
+rms2_combined = []
 
 for i in range(0,len(line_list)):    
     line_rv_array = jld2_read(line_data, line_rv, vb, i)
@@ -70,8 +71,9 @@ for i in range(0,len(line_list)):
     rms1_arr.append(rms1)
     rms2_arr.append(rms2)
     rms3_arr.append(rms3)
-    if rms1 <10: 
-        rms1_combined.append(rms1)
+
+    rms1_combined.append(rms1)
+    rms2_combined.append(rms2)
 
     axs[0].plot(UTC_time, projected_RV_SSD_4parameter_array, color = 'b', linestyle = "--", linewidth = 2, label = "Model I-CB: {} m/s".format(rms1))
     axs[0].plot(UTC_time, grass_off_SSD_4parameter_array, color = 'y', linestyle = "--", linewidth = 2, label = "Model II-CB: {} m/s".format(rms2))
@@ -99,7 +101,7 @@ for i in range(0,len(line_list)):
 
 plt.figure(figsize=(12, 6))
 plt.scatter(lines, rms1_arr, color= 'b', label = "Model I-CB",s= 50)
-plt.scatter(lines, rms2_arr, color= 'y', label = "Model II-CB-MF",s=50)
+plt.scatter(lines, rms2_arr, color= 'y', label = "Model II-CB",s=50)
 plt.scatter(lines, rms3_arr,color= 'r', label = 'Model III',s=50)
 plt.scatter(lines, avg_photon_noise, color = 'k', marker='x', label = "Photon Noise")
 plt.ylabel("RV RMS (m/s)", fontsize=12)
@@ -111,3 +113,4 @@ plt.savefig("line_comps.pdf", bbox_inches='tight')
 plt.clf() 
 
 print(len(rms1_combined)/np.sum(1/np.array(rms1_combined)))
+print(len(rms2_combined)/np.sum(1/np.array(rms2_combined)))
