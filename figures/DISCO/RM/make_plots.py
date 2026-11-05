@@ -12,6 +12,9 @@ import matplotlib.lines as mlines
 grass_on_SSD_4parameter = h5py.File("../../RM/CB/data/neid_all_lines_rv_on_SSD_4parameter_gpu_ext.jld2", "r")
 grass_on_RV_SSD_4parameter = grass_on_SSD_4parameter["rv_asymmetric_lsf"][()]
 
+grass_off_SSD_4parameter = h5py.File("data/neid_all_lines_rv_off_CB_optim_new.jld2", "r")
+grass_off_RV_SSD_4parameter = grass_off_SSD_4parameter["rv_asymmetric_lsf"][()]
+
 disco_SSD_4parameter = h5py.File("data/neid_all_lines_rv_disco_original.jld2", "r")
 disco_RV_SSD_4parameter = disco_SSD_4parameter["rv_asymmetric_lsf"][()]
 
@@ -62,14 +65,17 @@ for col_idx, i in enumerate(line_indices):
     # Read data
     line_rv_array = jld2_read(line_data, line_rv, vb, i)
     grass_on_SSD_4parameter_array = jld2_read(grass_on_SSD_4parameter, grass_on_RV_SSD_4parameter, vb, i)
+    grass_off_SSD_4parameter_array = jld2_read(grass_off_SSD_4parameter, grass_off_RV_SSD_4parameter, vb, i)
     disco_SSD_4parameter_array = jld2_read(disco_SSD_4parameter, disco_RV_SSD_4parameter, vb, i)
 
     # Compute RMS
     rms2 = round(np.sqrt((np.nansum((bin_array(line_rv_array, 4) - bin_array(disco_SSD_4parameter_array, 4))**2)) / len(bin_array(line_rv_array, 4))), 2)
     rms3 = round(np.sqrt((np.nansum((bin_array(line_rv_array, 4) - bin_array(grass_on_SSD_4parameter_array, 4))**2)) / len(bin_array(line_rv_array, 4))), 2)
+    rms1 = round(np.sqrt((np.nansum((bin_array(line_rv_array, 4) - bin_array(grass_off_SSD_4parameter_array, 4))**2)) / len(bin_array(line_rv_array, 4))), 2)
 
     # ---------------- TOP PANEL: RVs ----------------
     ax_top.scatter(UTC_time, line_rv_array, color='k', marker="x", s=25)
+    ax_top.plot(UTC_time, grass_off_SSD_4parameter_array, color='b', linestyle="--", linewidth=2, label=f"Model II-CB: {rms1} m/s")
     ax_top.plot(UTC_time, disco_SSD_4parameter_array, color='y', linestyle="--", linewidth=2, label=f"Model DISCO: {rms2} m/s")
     ax_top.plot(UTC_time, grass_on_SSD_4parameter_array, color='r', linestyle="--", linewidth=2, label=f"Model GRASS: {rms3} m/s")
 
@@ -79,6 +85,7 @@ for col_idx, i in enumerate(line_indices):
     ax_top.tick_params(axis='y', labelsize=12)
 
     # ---------------- BOTTOM PANEL: Residuals ----------------
+    ax_bot.scatter(UTC_time, line_rv_array - grass_off_SSD_4parameter_array, color='b', marker="x", s=8)
     ax_bot.scatter(UTC_time, line_rv_array - disco_SSD_4parameter_array, color='y', marker="x", s=8)
     ax_bot.scatter(UTC_time, line_rv_array - grass_on_SSD_4parameter_array, color='r', marker="x", s=8)
 
@@ -95,5 +102,5 @@ for col_idx, i in enumerate(line_indices):
 
 # Adjust layout and save combined 3-column figure
 plt.tight_layout()
-plt.savefig("disco_v_grass_rm.png", dpi=300, bbox_inches='tight')
+plt.savefig("models_rm.png", dpi=300, bbox_inches='tight')
 plt.show()
